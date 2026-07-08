@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from .models.user import User, UserRole, UserGroup, WalletTransaction
-from .models.order import Order, Service, OrderStatus
-from .api.schemas import UserCreate, OrderCreate
-from .auth.security import Security
+from models.user import User, UserRole, UserGroup, WalletTransaction
+from models.order import Order, Service, OrderStatus
+from api.schemas import UserCreate, OrderCreate
+from auth.security import Security
 import json
 
 class UserService:
