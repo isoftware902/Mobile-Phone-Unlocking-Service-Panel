@@ -1,5 +1,4 @@
 """Railway entrypoint — serves API + built frontend static files."""
-import os
 import sys
 from pathlib import Path
 
@@ -31,39 +30,12 @@ app.include_router(notifications.router)
 def health():
     return {"status": "ok"}
 
-# Debug: dump filesystem layout
-import logging
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger("startup")
-cwd = os.getcwd()
-file_path = __file__
-log.info("CWD=%s __file__=%s frontend_dir=%s exists=%s", cwd, file_path,
-         str(Path(__file__).parent / "frontend" / "out"),
-         (Path(__file__).parent / "frontend" / "out").exists())
-# Also check alt paths
-for alt in ["frontend/out", "out"]:
-    p = Path(cwd) / alt
-    log.info("  alt=%s exists=%s", str(p), p.exists())
-
-# Try parent of CWD
-for alt in ["frontend/out", "out"]:
-    p = Path(cwd).parent / alt
-    log.info("  parent_alt=%s exists=%s", str(p), p.exists())
-
 # Redirect root to frontend login
 @app.get("/")
 def root():
     return RedirectResponse(url="/auth/login")
 
-# Serve built frontend — must be LAST (mount at / catches all other paths)
+# Serve built frontend — must be LAST (mount at / catches everything)
 frontend_dir = Path(__file__).parent / "frontend" / "out"
 if frontend_dir.exists():
-    log.info("Mounting frontend static files from %s", str(frontend_dir))
     app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
-else:
-    log.warning("frontend static dir NOT FOUND at %s", str(frontend_dir))
-    # Fallback: try from CWD
-    alt = Path(cwd) / "frontend" / "out"
-    if alt.exists():
-        log.info("Fallback: mounting from %s", str(alt))
-        app.mount("/", StaticFiles(directory=str(alt), html=True), name="frontend")
