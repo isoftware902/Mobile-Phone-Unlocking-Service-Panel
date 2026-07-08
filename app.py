@@ -25,11 +25,11 @@ app.include_router(support.router)
 app.include_router(admin_routes.router)
 app.include_router(notifications.router)
 
-# Serve built frontend
-frontend_dir = Path(__file__).parent / "frontend" / "out"
-if frontend_dir.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+# Serve built frontend — must be LAST (mount at / catches everything)
+frontend_dir = Path(__file__).parent / "frontend" / "out"
+if frontend_dir.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
