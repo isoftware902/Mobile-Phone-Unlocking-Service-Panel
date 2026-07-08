@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   BarChart3,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -29,6 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: BarChart3, label: "Services", href: "/admin/services" },
     { icon: Users, label: "Users", href: "/admin/users" },
     { icon: Wallet, label: "Wallet", href: "/admin/wallet" },
+    { icon: MessageSquare, label: "Support", href: "/admin/support" },
     { icon: Settings, label: "Settings", href: "/admin/settings" },
   ];
 

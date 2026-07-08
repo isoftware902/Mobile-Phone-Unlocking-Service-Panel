@@ -8,6 +8,12 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Phone Unlock Pro | Enterprise GSM Service",
   description: "Professional Mobile Phone Unlocking Service Panel",
+  manifest: "/manifest.json",
+  themeColor: "#2563EB",
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+  },
 };
 
 export default function RootLayout({

@@ -12,7 +12,8 @@ import {
   LogOut, 
   Bell,
   Menu,
-  X
+  X,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { icon: ShoppingBag, label: "Create Order", href: "/dashboard/orders/new" },
     { icon: ShoppingBag, label: "Order History", href: "/dashboard/orders" },
     { icon: Wallet, label: "Wallet & Funds", href: "/dashboard/wallet" },
+    { icon: MessageSquare, label: "Support", href: "/dashboard/support" },
     { icon: User, label: "My Profile", href: "/dashboard/profile" },
     { icon: Settings, label: "Settings", href: "/dashboard/settings" },
   ];
