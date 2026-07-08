@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
+from routes import auth, users, orders, services, wallet
+
 app = FastAPI(
     title="Mobile Phone Unlocking Service API",
     description="Enterprise-grade API for GSM Unlocking Service",
@@ -16,6 +18,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register Routers
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(orders.router)
+app.include_router(services.router)
+# Wallet router can be added here once implemented
 
 @app.get("/")
 async def root():

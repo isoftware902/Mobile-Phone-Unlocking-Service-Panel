@@ -7,28 +7,48 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { motion } from "framer-motion";
 import { LockKeyhole, Mail } from "lucide-react";
+import apiClient from "@/lib/api-client";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
-    // Mock login for UI demonstration until API is fully connected
-    setTimeout(() => {
-      login("mock-jwt-token", { 
-        id: "1", 
-        username: "admin", 
-        email: formData.email, 
-        role: "super_admin", 
-        balance: 1500.00,
-        group: "retail" 
+    try {
+      const response = await apiClient.post("/auth/login", {
+        data: {
+          username: formData.email,
+          password: formData.password
+        },
+        // FastAPI OAuth2PasswordRequestForm expects form-data, not JSON
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        params: {
+          username: formData.email,
+          password: formData.password
+        }
       });
+      
+      // Note: FastAPI OAuth2PasswordRequestForm usually needs specific format
+      // For a real production app, we'd use FormData object
+      const formDataObj = new FormData();
+      formDataObj.append("username", formData.email);
+      formDataObj.append("password", formData.password);
+      
+      const res = await apiClient.post("/auth/login", formDataObj);
+      const { access_token, user } = res.data;
+      
+      login(access_token, user);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Invalid credentials. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -46,6 +66,11 @@ export default function LoginPage() {
 
         <Card className="border-border shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 rounded-md bg-danger/10 text-danger text-sm font-medium border border-danger/20">
+                {error}
+              </div>
+            )}
             <div className="space-y-4">
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted" />
