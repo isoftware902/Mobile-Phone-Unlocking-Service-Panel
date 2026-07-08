@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,31 +10,59 @@ import {
   CheckCircle, 
   XCircle, 
   Clock,
-  Clock,
   MoreVertical,
   FileText,
   MessageSquare
 } from "lucide-react";
+import apiClient from "@/lib/api-client";
 
 export default function AdminOrdersPage() {
-  const [filter, setFilter] = useState("all");
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-  const orders = [
-    { id: "ORD-8291", user: "john_doe", service: "iPhone 15 Pro Max Factory", status: "pending", price: 45.00, date: "2023-10-20", imei: "354678...901" },
-    { id: "ORD-8292", user: "jane_smith", service: "Samsung S24 Ultra Network", status: "processing", price: 30.00, date: "2023-10-19", imei: "351122...445" },
-    { id: "ORD-8293", user: "mike_ross", service: "Google Pixel 8 Official", status: "completed", price: 25.00, date: "2023-10-18", imei: "359988...112" },
-    { id: "ORD-8294", user: "sarah_connor", service: "iPhone 14 Factory", status: "rejected", price: 40.00, date: "2023-10-17", imei: "356677...334" },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await apiClient.get("/orders/all");
+        setOrders(res.data);
+      } catch (err) {
+        console.error("Failed to load orders", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  const handleStatusUpdate = async (orderId: string, status: string) => {
+    try {
+      await apiClient.patch(`/orders/${orderId}`, { status });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to update order");
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const styles: any = {
       pending: "bg-warning/10 text-warning",
-      processing: "bg-blue-100 text-blue-600",
+      waiting: "bg-blue-100 text-blue-600",
+      processing: "bg-purple-100 text-purple-600",
       completed: "bg-success/10 text-success",
       rejected: "bg-danger/10 text-danger",
+      cancelled: "bg-gray-100 text-gray-500",
+      refunded: "bg-orange-100 text-orange-600",
+      hold: "bg-yellow-100 text-yellow-600",
     };
-    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status]}`}>{status.toUpperCase()}</span>;
+    return <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status] || "bg-gray-100 text-gray-500"}`}>{status.toUpperCase()}</span>;
   };
+
+  const filteredOrders = orders.filter(o => 
+    !search || 
+    String(o.id).toLowerCase().includes(search.toLowerCase()) ||
+    (o.order_data && String(o.order_data).toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <div className="space-y-8">
@@ -59,51 +87,59 @@ export default function AdminOrdersPage() {
           <input 
             className="w-full pl-10 pr-4 py-2 rounded-md border border-border bg-transparent text-sm focus:ring-2 focus:ring-primary outline-none" 
             placeholder="Search by Order ID, User or IMEI..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="text-sm font-medium text-muted border-b border-border">
-                <th className="pb-4">Order ID</th>
-                <th className="pb-4">Customer</th>
-                <th className="pb-4">Service</th>
-                <th className="pb-4">IMEI</th>
-                <th className="pb-4">Status</th>
-                <th className="pb-4">Price</th>
-                <th className="pb-4">Date</th>
-                <th className="pb-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {orders.map((order) => (
-                <tr key={order.id} className="group hover:bg-slate-50/50 transition-colors">
-                  <td className="py-4 text-sm font-medium">{order.id}</td>
-                  <td className="py-4 text-sm">{order.user}</td>
-                  <td className="py-4 text-sm">{order.service}</td>
-                  <td className="py-4 text-sm font-mono text-muted">{order.imei}</td>
-                  <td className="py-4">{getStatusBadge(order.status)}</td>
-                  <td className="py-4 text-sm">${order.price.toFixed(2)}</td>
-                  <td className="py-4 text-sm text-muted">{order.date}</td>
-                  <td className="py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" className="text-success" title="Complete">
-                        <CheckCircle size={16} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-danger" title="Reject">
-                        <XCircle size={16} />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-primary" title="Note">
-                        <MessageSquare size={16} />
-                      </Button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="text-center py-12 text-muted">Loading orders...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-sm font-medium text-muted border-b border-border">
+                  <th className="pb-4">Order ID</th>
+                  <th className="pb-4">Service</th>
+                  <th className="pb-4">Status</th>
+                  <th className="pb-4">Price</th>
+                  <th className="pb-4">Date</th>
+                  <th className="pb-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-muted">No orders found.</td>
+                  </tr>
+                ) : (
+                  filteredOrders.map((order) => (
+                    <tr key={order.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4 text-sm font-medium">#{String(order.id).substring(0, 8)}</td>
+                      <td className="py-4 text-sm">{order.service?.name || "Service"}</td>
+                      <td className="py-4">{getStatusBadge(order.status)}</td>
+                      <td className="py-4 text-sm">${Number(order.price_paid).toFixed(2)}</td>
+                      <td className="py-4 text-sm text-muted">{new Date(order.created_at).toLocaleDateString()}</td>
+                      <td className="py-4 text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="sm" className="text-success" onClick={() => handleStatusUpdate(order.id, "completed")} title="Complete">
+                            <CheckCircle size={16} />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-danger" onClick={() => handleStatusUpdate(order.id, "rejected")} title="Reject">
+                            <XCircle size={16} />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-primary" title="Note">
+                            <MessageSquare size={16} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );

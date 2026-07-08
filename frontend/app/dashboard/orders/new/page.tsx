@@ -6,26 +6,37 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/context/AuthContext";
-import { Search, Info, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Search, Info, AlertCircle, Clock } from "lucide-react";
+import apiClient from "@/lib/api-client";
 
 export default function CreateOrderPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
   const [formData, setFormData] = useState({
     imei: "",
     carrier: "",
     country: "",
+    model: "",
     notes: "",
   });
 
-  // Mock services list - this will come from API
-  const mockServices = [
-    { id: "1", name: "iPhone 15 Pro Max - Factory Unlock", price: 45.00, requirements: "IMEI, Country", time: "1-3 Days", category: "Apple" },
-    { id: "2", name: "Samsung S24 Ultra - Network Unlock", price: 30.00, requirements: "IMEI", time: "24 Hours", category: "Samsung" },
-    { id: "3", name: "Google Pixel 8 - Official Unlock", price: 25.00, requirements: "IMEI, Email", time: "2-5 Days", category: "Google" },
-  ];
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await apiClient.get("/services");
+        setServices(res.data);
+      } catch (err) {
+        console.error("Failed to load services", err);
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
 
   const handleServiceSelect = (service: any) => {
     setSelectedService(service);
@@ -36,13 +47,29 @@ export default function CreateOrderPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Mock API Call
-    setTimeout(() => {
+    try {
+      const orderData = {
+        imei: formData.imei,
+        carrier: formData.carrier,
+        country: formData.country,
+        model: formData.model,
+      };
+      
+      await apiClient.post("/orders", {
+        service_id: selectedService.id,
+        order_data: orderData,
+        customer_notes: formData.notes || null,
+      });
+      
       alert("Order submitted successfully!");
-      setIsLoading(false);
       setStep(1);
       setSelectedService(null);
-    }, 1500);
+      setFormData({ imei: "", carrier: "", country: "", model: "", notes: "" });
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to create order");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -73,30 +100,38 @@ export default function CreateOrderPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {mockServices.map((service) => (
-              <Card 
-                key={service.id} 
-                className="cursor-pointer hover:border-primary transition-all group"
-                onClick={() => handleServiceSelect(service)}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary">{service.category}</span>
-                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{service.name}</h3>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted">
-                      <span className="flex items-center gap-1"><Clock size={14}/> {service.time}</span>
-                      <span className="flex items-center gap-1"><Info size={14}/> {service.requirements}</span>
+          {servicesLoading ? (
+            <div className="text-center py-12 text-muted">Loading services...</div>
+          ) : services.length === 0 ? (
+            <div className="text-center py-12 text-muted">No services available at this time.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {services.map((service) => (
+                <Card 
+                  key={service.id} 
+                  className="cursor-pointer hover:border-primary transition-all group"
+                  onClick={() => handleServiceSelect(service)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                        {service.description?.substring(0, 20) || "Service"}
+                      </span>
+                      <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{service.name}</h3>
+                      <div className="flex items-center gap-4 mt-3 text-sm text-muted">
+                        <span className="flex items-center gap-1"><Clock size={14}/> {service.processing_time}</span>
+                        <span className="flex items-center gap-1"><Info size={14}/> {service.requirements}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-foreground">${service.retail_price.toFixed(2)}</p>
+                      <Button variant="outline" size="sm" className="mt-2">Select</Button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-foreground">${service.price.toFixed(2)}</p>
-                    <Button variant="outline" size="sm" className="mt-2">Select</Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </motion.div>
       ) : (
         <motion.div 
@@ -161,11 +196,11 @@ export default function CreateOrderPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted">Delivery Time:</span>
-                  <span className="font-medium">{selectedService?.time}</span>
+                  <span className="font-medium">{selectedService?.processing_time}</span>
                 </div>
                 <div className="border-t border-border pt-4 flex justify-between items-center">
                   <span className="font-semibold">Total Cost:</span>
-                  <span className="text-xl font-bold text-primary">${selectedService?.price.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-primary">${Number(selectedService?.retail_price).toFixed(2)}</span>
                 </div>
               </div>
             </Card>
