@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from routes import auth, users, orders, services, wallet, support, admin_routes, notifications
@@ -49,7 +50,12 @@ for alt in ["frontend/out", "out"]:
     p = Path(cwd).parent / alt
     log.info("  parent_alt=%s exists=%s", str(p), p.exists())
 
-# Serve built frontend — must be LAST (mount at / catches everything)
+# Redirect root to frontend login
+@app.get("/")
+def root():
+    return RedirectResponse(url="/auth/login")
+
+# Serve built frontend — must be LAST (mount at / catches all other paths)
 frontend_dir = Path(__file__).parent / "frontend" / "out"
 if frontend_dir.exists():
     log.info("Mounting frontend static files from %s", str(frontend_dir))
