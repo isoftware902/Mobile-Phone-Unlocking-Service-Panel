@@ -10,7 +10,7 @@
         { "local": true, "include": ["frontend"] }
       ],
       "commands": [
-        "cd frontend && npm install"
+        "cd frontend && npm install --legacy-peer-deps"
       ]
     },
     "frontend-build": {
