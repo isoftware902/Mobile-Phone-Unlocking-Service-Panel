@@ -20,11 +20,21 @@
       "commands": [
         "cd frontend && npm run build"
       ]
+    },
+    "pip-deploy": {
+      "inputs": [
+        { "step": "packages:mise" },
+        { "local": true, "include": ["requirements.txt"] }
+      ],
+      "commands": [
+        "pip install --target /app/python-deps -r requirements.txt"
+      ]
     }
   },
   "deploy": {
     "inputs": [
       { "step": "install" },
+      { "step": "pip-deploy" },
       { "step": "frontend-build", "include": ["frontend/out"] }
     ]
   }
