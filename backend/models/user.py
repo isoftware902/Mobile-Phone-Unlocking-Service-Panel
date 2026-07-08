@@ -50,3 +50,16 @@ class WalletTransaction(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True) # Admin who performed it
 
     user = relationship("User", back_populates="wallet_transactions")
+
+class ReloadRequest(Base):
+    __tablename__ = "reload_requests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    amount = Column(Float, nullable=False)
+    status = Column(String, default="pending")  # pending, approved, rejected
+    admin_notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")

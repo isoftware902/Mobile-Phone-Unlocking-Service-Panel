@@ -24,7 +24,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(orders.router)
 app.include_router(services.router)
-# Wallet router can be added here once implemented
+app.include_router(wallet.router)
 
 @app.get("/")
 async def root():
