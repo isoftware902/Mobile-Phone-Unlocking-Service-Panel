@@ -35,7 +35,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    wallet_transactions = relationship("WalletTransaction", back_populates="user")
+    wallet_transactions = relationship("WalletTransaction", back_populates="user", foreign_keys="WalletTransaction.user_id")
     orders = relationship("Order", back_populates="user")
 
 class WalletTransaction(Base):
@@ -49,7 +49,7 @@ class WalletTransaction(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True) # Admin who performed it
 
-    user = relationship("User", back_populates="wallet_transactions")
+    user = relationship("User", back_populates="wallet_transactions", foreign_keys="WalletTransaction.user_id")
 
 class ReloadRequest(Base):
     __tablename__ = "reload_requests"
