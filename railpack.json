@@ -14,7 +14,7 @@
       "commands": [
         "cd frontend && npm run build"
       ],
-      "deployOutputs": ["frontend/out"]
+      "deployOutputs": [{ "include": ["frontend/out"] }]
     }
   }
 }
